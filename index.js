@@ -4,6 +4,7 @@ import { CssSelectorParser } from 'css-selector-parser'
 
 const PARSER = new CssSelectorParser()
 PARSER.registerAttrEqualityMods('^', '$', '*', '|')
+PARSER.registerNestingOperators('>')
 
 function eventSimulator(props, eventName, event) {
   return function () {
@@ -15,6 +16,9 @@ function createApi (tree) {
   if (!tree) return null
   return {
     props: tree.props,
+    toJSON () {
+      return tree
+    },
 
     simulate (eventName, event) {
       let eventHandlerName = `on${eventName[0].toUpperCase()}${eventName.substring(1)}`

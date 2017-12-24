@@ -153,3 +153,172 @@ describe('text', () => {
     expect(view.text()).toEqual('Hello')
   })
 })
+
+const Child = ({ text }) => (
+  <Text>
+    Child { text }
+  </Text>
+)
+
+const Parent = () => (
+  <View>
+    <Text>
+      Parent-4
+    </Text>
+    <Text>
+      Parent-5
+    </Text>
+    <Child text="1" />
+    <Child text="2" />
+    <Child text="3" />
+  </View>
+)
+
+const expectTextToNotInclude = (text, strings) => {
+  strings.beforeEach((str) => {
+    expect(text).not.toEqual(
+      expect.stringContaining(str)
+    )
+  })
+}
+
+const getTextFromComponents = (components) => {
+  return components.reduce((allText, component) => {
+    allText += component.text()
+    return allText
+  }, "")
+}
+
+describe('child querying', () => {
+  let rendered;
+  beforeEach(() => {
+    rendered = renderer(<Parent />)
+  })
+
+  describe('using ">"', () => {
+    describe('using query', () => {
+      let component;
+      beforeEach(() => {
+        component = rendered.query('Parent > Text')
+      })
+      it('should find a component', () => {
+        expect(component).not.toBeNull()
+      })
+
+      it('should be a "Text" component', () => {
+        expect(component.toJSON().type).toBe("Text")
+      })
+
+      it('should only find a component that are a direct child of parent', () => {
+        const text = component.text().toLowerCase()
+        expect(text).toEqual(
+          expect.stringContaining("parent")
+        )
+        expect(text).not.toEqual(
+          expect.stringContaining("1"),
+          expect.stringContaining("2"),
+          expect.stringContaining("3")
+        )
+      })
+
+      it('should only find the first component', () => {
+        const text = component.text()
+        expect(text.toLowerCase()).toEqual(
+          expect.stringContaining("4")
+        )
+        expect(text).not.toEqual(
+          expect.stringContaining("5"),
+          expect.stringContaining("1"),
+          expect.stringContaining("2"),
+          expect.stringContaining("3")
+        )
+      })
+    })
+
+    describe('using queryAll', () => {
+      let components;
+      let text;
+      beforeEach(() => {
+        components = rendered.queryAll('Parent > Text')
+        text = getTextFromComponents(components)
+      })
+
+      it('should find a component', () => {
+        expect(components.length).not.toBe(0)
+      })
+
+      it('should only find a component that are a direct child of parent', () => {
+        expect(text.toLowerCase()).toEqual(
+          expect.stringContaining('parent')
+        )
+
+        expectTextToNotInclude(text, ['1', '2', '3'])
+      })
+
+      it('should find all components', () => {
+        expect(text).toEqual(
+          expect.stringContaining('4'),
+          expect.stringContaining('5')
+        )
+        expectTextToNotInclude(text, ['1', '2', '3'])
+      })
+    })
+  })
+
+  describe('using decendant selector', () => {
+    describe('using query', () => {
+      let component
+      let text
+      beforeEach(() => {
+        component = rendered.query('Parent Text')
+        text = component.text()
+      })
+      it('should find a component', () => {
+        expect(component).not.toBeNull()
+      })
+
+      it('should only find a component that are a child of parent', () => {
+        expect(text).toEqual(
+          expect.stringContaining('4'),
+          expect.stringContaining('5'),
+          expect.stringContaining('1'),
+          expect.stringContaining('2'),
+          expect.stringContaining('3')
+        )
+      })
+
+      it('should only find the first component', () => {
+        expect(text).toEqual(
+          expect.stringContaining('4')
+        )
+        expect(text).not.toEqual(
+          expect.stringContaining(/[1-3]|5/)
+        )
+      })
+    })
+
+    describe('using queryAll', () => {
+      let components
+      let text
+      beforeEach(() => {
+        components = rendered.queryAll('Parent Text')
+        text = getTextFromComponents(components)
+      })
+      it('should find a component', () => {
+        expect(components).not.toBeNull()
+        expect(components.length).not.toBe(0)
+      })
+
+      it('should only find components that are a child of parent', () => {
+        components.beforeEach((component) => {
+          const text = component.text()
+          expect(text).toMatch(/[1-5]/)
+        })
+      })
+
+      it('should find all components', () => {
+        expect(components.length).toBe(5)
+      })
+    })
+  })
+})

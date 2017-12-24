@@ -1,6 +1,8 @@
 import ruleSet from './rules/ruleSet'
 
 export default function find (component, selector) {
+  // console.log(component);
+  // console.log(selector);
   let results = []
   switch (selector.type) {
     case 'ruleSet':
